@@ -1,15 +1,8 @@
--- استدعاء مكتبة واجهات Fluent المستقرة
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+-- استدعاء مكتبة Kavo المستقرة والمتوافقة مع محركك
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 
--- إنشاء النافذة الرئيسية بحقوقك 7KM
-local Window = Fluent:CreateWindow({
-    Title = "7KM Hub | Premium",
-    SubTitle = "بواسطة 7KM",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
-    Acrylic = false, 
-    Theme = "Dark"
-})
+-- إنشاء اللوحة بثيم فخم (BloodTheme) وبحقوقك 7KM
+local Window = Library.CreateLib("7KM Hub | Premium Edition", "BloodTheme")
 
 -- الخدمات الأساسية داخل روبلوكس
 local Players = game:GetService("Players")
@@ -17,106 +10,84 @@ local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 
--- إضافة التبويبات الفخمة
-local Tab1 = Window:AddTab({ Title = "اللاعب", Icon = "user" })
-local Tab2 = Window:AddTab({ Title = "الحركة والقدرات", Icon = "navigation" })
-local Tab3 = Window:AddTab({ Title = "الحقوق", Icon = "settings" })
-
 -- متغيرات التحكم بالميزات
 local FlySpeed = 50
 local Flying = false
 local Noclip = false
 local InfJump = false
 
+-- إنشاء التبويبات الفخمة (Tabs)
+local Tab1 = Window:NewTab("اللاعب")
+local Tab2 = Window:NewTab("الحركة والقدرات")
+local Tab3 = Window:NewTab("الحقوق")
+
+local Section1 = Tab1:NewSection("تعديل خصائص اللاعب")
+local Section2 = Tab2:NewSection("الطيران واختراق الجدران")
+local Section3 = Tab3:NewSection("المطور")
+
 ------------------------------------------------------------------------
--- [1] ميزات تبويب اللاعب
+-- [1] تبويب اللاعب
 ------------------------------------------------------------------------
 
--- شريط تعديل السرعة
-Tab1:AddSlider("SpeedSlider", {
-    Title = "تعديل السرعة (WalkSpeed)",
-    Min = 16,
-    Max = 300,
-    Default = 16,
-    Callback = function(v)
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v
+-- شريط السرعة
+Section1:NewSlider("تعديل السرعة (WalkSpeed)", "تحكم في سرعة مشي الشخصية", 300, 16, function(v)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v
+    end
+end)
+
+-- شريط القفز
+Section1:NewSlider("تعديل القفز (JumpPower)", "تحكم في قوة قفز الشخصية", 300, 50, function(v)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        hum.UseJumpPower = true
+        hum.JumpPower = v
+    end
+end)
+
+------------------------------------------------------------------------
+-- [2] تبويب الحركة والقدرات (الطيران والنكليب)
+------------------------------------------------------------------------
+
+-- زر الطيران
+Section2:NewToggle("تفعيل الطيران (Fly)", "تسمح لك بالطيران والسير في الهواء", function(state)
+    Flying = state
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        if state then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").PlatformStand = true
+        else
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").PlatformStand = false
         end
     end
-})
-
--- شريط تعديل القفز
-Tab1:AddSlider("JumpSlider", {
-    Title = "تعديل القفز (JumpPower)",
-    Min = 50,
-    Max = 300,
-    Default = 50,
-    Callback = function(v)
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            hum.UseJumpPower = true
-            hum.JumpPower = v
-        end
-    end
-})
-
-------------------------------------------------------------------------
--- [2] ميزات تبويب الحركة والقدرات
-------------------------------------------------------------------------
-
--- زر تفعيل الطيران
-Tab2:AddToggle("FlyToggle", {
-    Title = "تفعيل الطيران (Fly)",
-    Default = false,
-    Callback = function(state)
-        Flying = state
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").PlatformStand = state
-        end
-    end
-})
+end)
 
 -- شريط سرعة الطيران
-Tab2:AddSlider("FlySpeedSlider", {
-    Title = "سرعة الطيران",
-    Min = 20,
-    Max = 300,
-    Default = 50,
-    Callback = function(v)
-        FlySpeed = v
-    end
-})
+Section2:NewSlider("سرعة الطيران", "تحكم في سرعة طيرانك في الهواء", 300, 20, function(v)
+    FlySpeed = v
+end)
 
 -- زر اختراق الجدران
-Tab2:AddToggle("NoclipToggle", {
-    Title = "اختراق الجدران (Noclip)",
-    Default = false,
-    Callback = function(state)
-        Noclip = state
-    end
-})
+Section2:NewToggle("اختراق الجدران (Noclip)", "تسمح لك بالمرور من بين الجدران والأشياء", function(state)
+    Noclip = state
+end)
 
 -- زر قفز لانهائي
-Tab2:AddToggle("InfJumpToggle", {
-    Title = "قفز لانهائي (Infinite Jump)",
-    Default = false,
-    Callback = function(state)
-        InfJump = state
-    end
-})
+Section2:NewToggle("قفز لانهائي (Infinite Jump)", "تسمح لك بالقفز المتكرر في الهواء", function(state)
+    InfJump = state
+end)
 
 ------------------------------------------------------------------------
--- [3] المحركات الخلفية المستقلة
+-- [3] المحركات الخلفية المستقلة (تشغيل الميزات بدون كراش)
 ------------------------------------------------------------------------
 
--- محرك حركة الطيران بالكيبورد (W, A, S, D)
+-- محرك الطيران (W, A, S, D)
 task.spawn(function()
     while true do
         task.wait()
         if Flying and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             local root = LocalPlayer.Character.HumanoidRootPart
             local cam = workspace.CurrentCamera
-            local dir = Vector3.new(0,0,0)
+            local dir = Vector3.new(0, 0, 0)
             
             if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.CFrame.LookVector end
             if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.CFrame.LookVector end
@@ -126,7 +97,7 @@ task.spawn(function()
             if dir.Magnitude > 0 then
                 root.Velocity = dir.Unit * FlySpeed
             else
-                root.Velocity = Vector3.new(0,0,0)
+                root.Velocity = Vector3.new(0, 0, 0)
             end
         end
     end
@@ -151,13 +122,8 @@ UIS.JumpRequest:Connect(function()
 end)
 
 ------------------------------------------------------------------------
--- [4] قائمة الحقوق
+-- [4] تبويب الحقوق
 ------------------------------------------------------------------------
-Tab3:AddParagraph({
-    Title = "حقوق السكربت",
-    Content = "تم تطوير وتصميم هذا السكربت الفخم بواسطة: 7KM
-جميع الحقوق محفوظة © 2026"
-})
-
--- فتح أول قائمة تلقائياً عند التشغيل
-Window:SelectTab(1)
+Section3:NewLabel("تم التطوير بواسطة: 7KM")
+Section3:NewLabel("سكربت متكامل ومستقر")
+Section3:NewLabel("جميع الحقوق محفوظة © 2026")
