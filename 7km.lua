@@ -1,178 +1,190 @@
--- Xeno Study Hub - Advanced Test Script
+-- Xeno Study Hub v2 - Enhanced for Research
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
+local root = character:WaitForChild("HumanoidRootPart")
 
 local gui = Instance.new("ScreenGui")
-gui.Name = "XenoStudyHub"
+gui.Name = "XenoStudyHubV2"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 420, 0, 520)
-mainFrame.Position = UDim2.new(0.5, -210, 0.5, -260)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+mainFrame.Size = UDim2.new(0, 450, 0, 580)
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -290)
+mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 mainFrame.BorderSizePixel = 0
-mainFrame.ClipsDescendants = true
 mainFrame.Parent = gui
 
--- Shadow Effect
-local shadow = Instance.new("UIStroke")
-shadow.Thickness = 2
-shadow.Color = Color3.fromRGB(0, 170, 255)
-shadow.Transparency = 0.7
-shadow.Parent = mainFrame
-
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
+corner.CornerRadius = UDim.new(0, 14)
 corner.Parent = mainFrame
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 50)
-title.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-title.Text = "XENO STUDY HUB"
+title.Size = UDim2.new(1, 0, 0, 55)
+title.BackgroundColor3 = Color3.fromRGB(0, 110, 230)
+title.Text = "XENO STUDY HUB v2"
 title.TextColor3 = Color3.new(1,1,1)
-title.TextSize = 22
+title.TextSize = 24
 title.Font = Enum.Font.GothamBold
 title.Parent = mainFrame
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 12)
-titleCorner.Parent = title
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, -20, 1, -75)
+scroll.Position = UDim2.new(0, 10, 0, 65)
+scroll.BackgroundTransparency = 1
+scroll.ScrollBarThickness = 8
+scroll.Parent = mainFrame
 
--- Scrolling Frame
-local scrolling = Instance.new("ScrollingFrame")
-scrolling.Size = UDim2.new(1, -20, 1, -70)
-scrolling.Position = UDim2.new(0, 10, 0, 60)
-scrolling.BackgroundTransparency = 1
-scrolling.ScrollBarThickness = 6
-scrolling.Parent = mainFrame
+local list = Instance.new("UIListLayout")
+list.Padding = UDim.new(0, 12)
+list.Parent = scroll
 
-local listLayout = Instance.new("UIListLayout")
-listLayout.Padding = UDim.new(0, 10)
-listLayout.Parent = scrolling
-
--- Functions
+-- Variables
 local flying = false
 local noclipping = false
-local speedValue = 50
 local infJump = false
+local speedValue = 50
 
--- Fly Function
-local function startFly()
-    flying = true
-    local bodyVelocity = Instance.new("BodyVelocity")
-    local bodyGyro = Instance.new("BodyGyro")
-    bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000)
-    bodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
-    bodyVelocity.Parent = character.HumanoidRootPart
-    bodyGyro.Parent = character.HumanoidRootPart
-
-    spawn(function()
-        while flying and character and character:FindFirstChild("HumanoidRootPart") do
-            local cam = workspace.CurrentCamera
-            local moveDirection = Vector3.new()
-            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + cam.CFrame.LookVector end
-            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - cam.CFrame.LookVector end
-            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - cam.CFrame.RightVector end
-            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + cam.CFrame.RightVector end
-            bodyVelocity.Velocity = moveDirection.Unit * speedValue * 3
-            bodyGyro.CFrame = cam.CFrame
-            game:GetService("RunService").Heartbeat:Wait()
-        end
-        bodyVelocity:Destroy()
-        bodyGyro:Destroy()
-    end)
+-- Better Fly Function
+local function toggleFly()
+    flying = not flying
+    if flying then
+        local bv = Instance.new("BodyVelocity")
+        local bg = Instance.new("BodyGyro")
+        bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        bv.Parent = root
+        bg.Parent = root
+        
+        spawn(function()
+            while flying and root and root.Parent do
+                local cam = workspace.CurrentCamera
+                local dir = Vector3.new(0,0,0)
+                local uis = game:GetService("UserInputService")
+                
+                if uis:IsKeyDown(Enum.KeyCode.W) then dir += cam.CFrame.LookVector end
+                if uis:IsKeyDown(Enum.KeyCode.S) then dir -= cam.CFrame.LookVector end
+                if uis:IsKeyDown(Enum.KeyCode.A) then dir -= cam.CFrame.RightVector end
+                if uis:IsKeyDown(Enum.KeyCode.D) then dir += cam.CFrame.RightVector end
+                if uis:IsKeyDown(Enum.KeyCode.Space) then dir += Vector3.new(0,1,0) end
+                if uis:IsKeyDown(Enum.KeyCode.LeftControl) then dir -= Vector3.new(0,1,0) end
+                
+                bv.Velocity = dir.Unit * speedValue * 4
+                bg.CFrame = cam.CFrame
+                wait()
+            end
+            if bv then bv:Destroy() end
+            if bg then bg:Destroy() end
+        end)
+        print("✅ Fly Activated")
+    else
+        print("❌ Fly Deactivated")
+    end
 end
 
--- Buttons
-local function createButton(text, callback)
+-- Create Button Function
+local function addButton(text, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -20, 0, 50)
-    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    btn.Size = UDim2.new(1, -20, 0, 55)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     btn.Text = text
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.TextSize = 16
+    btn.TextSize = 17
     btn.Font = Enum.Font.GothamSemibold
-    btn.Parent = scrolling
+    btn.Parent = scroll
     
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.CornerRadius = UDim.new(0, 10)
     btnCorner.Parent = btn
     
     btn.MouseButton1Click:Connect(callback)
-    return btn
 end
 
-createButton("Speed: ON ("..speedValue..")", function()
-    speedValue = speedValue + 20
-    humanoid.WalkSpeed = speedValue
-    print("Speed set to: " .. speedValue)
-end)
-
-createButton("Fly: Toggle", function()
-    flying = not flying
-    if flying then
-        startFly()
-        print("Fly Activated")
-    else
-        print("Fly Deactivated")
+-- === Movement Section ===
+addButton("Speed: Set Value", function()
+    local value = tonumber(game:GetService("StarterGui"):SetCore("PromptForInput", {
+        Title = "Set Speed",
+        Description = "أدخل السرعة (مثال: 100)",
+        DefaultText = tostring(speedValue)
+    }))
+    if value then
+        speedValue = value
+        humanoid.WalkSpeed = value
+        print("Speed set to: " .. value)
     end
 end)
 
-createButton("Noclip: Toggle", function()
+addButton("Fly: Toggle", toggleFly)
+
+addButton("Noclip: Toggle", function()
     noclipping = not noclipping
-    if noclipping then
-        spawn(function()
-            while noclipping do
-                for _, part in pairs(character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
+    print("Noclip: " .. (noclipping and "ON" or "OFF"))
+    spawn(function()
+        while noclipping do
+            for _, v in pairs(character:GetDescendants()) do
+                if v:IsA("BasePart") and v.CanCollide then
+                    v.CanCollide = false
                 end
-                game:GetService("RunService").Stepped:Wait()
             end
-        end)
-        print("Noclip Activated")
-    else
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
-            end
+            game:GetService("RunService").Stepped:Wait()
         end
-        print("Noclip Deactivated")
-    end
+    end)
 end)
 
-createButton("Infinite Jump: Toggle", function()
+addButton("Infinite Jump: Toggle", function()
     infJump = not infJump
     print("Infinite Jump: " .. (infJump and "ON" or "OFF"))
 end)
 
--- Infinite Jump Connection
+-- === Aimbot Section ===
+addButton("Aimbot: Toggle (Nearest)", function()
+    -- Simple Aimbot
+    local target = nil
+    local dist = math.huge
+    
+    for _, p in pairs(game.Players:GetPlayers()) do
+        if p ~= player and p.Character and p.Character:FindFirstChild("Head") then
+            local d = (p.Character.Head.Position - root.Position).Magnitude
+            if d < dist then
+                dist = d
+                target = p.Character.Head
+            end
+        end
+    end
+    
+    if target then
+        workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, target.Position)
+        print("Aimbot locked on: " .. target.Parent.Name)
+    else
+        print("No target found")
+    end
+end)
+
+-- Animations
+addButton("Animation: Strong Attack", function()
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://136801251"
+    humanoid:LoadAnimation(anim):Play()
+end)
+
+addButton("Animation: Spin Kick", function()
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://333333131"
+    humanoid:LoadAnimation(anim):Play()
+end)
+
+addButton("Animation: Hero Landing", function()
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://101439041"
+    humanoid:LoadAnimation(anim):Play()
+end)
+
+-- Infinite Jump
 game:GetService("UserInputService").JumpRequest:Connect(function()
-    if infJump and humanoid then
+    if infJump then
         humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
--- Animations Section
-createButton("Animation: Strong Punch", function()
-    local anim = Instance.new("Animation")
-    anim.AnimationId = "rbxassetid://136801251"  -- Strong Punch
-    humanoid:LoadAnimation(anim):Play()
-end)
-
-createButton("Animation: Epic Spin", function()
-    local anim = Instance.new("Animation")
-    anim.AnimationId = "rbxassetid://333333131"  -- Spin
-    humanoid:LoadAnimation(anim):Play()
-end)
-
-createButton("Animation: Hero Pose", function()
-    local anim = Instance.new("Animation")
-    anim.AnimationId = "rbxassetid://101439041"  
-    humanoid:LoadAnimation(anim):Play()
-end)
-
-print("✅ Xeno Study Hub Loaded Successfully - For Research Only")
+print("✅ Xeno Study Hub v2 Loaded - Use for Research & Anti-Cheat Testing Only")
