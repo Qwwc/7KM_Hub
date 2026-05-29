@@ -1,38 +1,43 @@
--- استدعاء مكتبة واجهات DrRay (المتوافقة مع كل المحركات)
-local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/AZYsGithub/DrRay-UI-Library/main/Main.lua"))()
+-- استدعاء مكتبة Kavo المستقرة والمتوافقة مع محركك
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 
--- إنشاء النافذة الرئيسية بحقوقك
-local Window = DrRayLibrary:NewWindow("7KM Hub | Premium", "Default")
+-- إنشاء اللوحة بشكل محسّن وثيم فخم (BloodTheme) بحقوقك
+local Window = Library.CreateLib("7KM Hub | Premium Edition", "BloodTheme")
 
--- الخدمات الأساسية داخل روبلوكس
+-- الخدمات الأساسية ل روبلوكس
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 
--- متغيرات التحكم بالقدرات
+-- متغيرات التحكم بالميزات
 local FlySpeed = 50
 local Flying = false
 local Noclip = false
 local InfJump = false
 
--- إنشاء التبويبات (Tabs)
-local Tab1 = DrRayLibrary:NewTab("اللاعب", "rbxassetid://4483345998")
-local Tab2 = DrRayLibrary:NewTab("الحركة والقدرات", "rbxassetid://4483345998")
+-- إنشاء التبويبات الفخمة (Tabs)
+local Tab1 = Window:NewTab("اللاعب")
+local Tab2 = Window:AddTab("الحركة والقدرات")
+local Tab3 = Window:NewTab("الحقوق")
+
+local Section1 = Tab1:NewSection("تعديل خصائص اللاعب")
+local Section2 = Tab2:NewSection("الطيران واختراق الجدران")
+local Section3 = Tab3:NewSection("المطور")
 
 ------------------------------------------------------------------------
--- [1] ميزات تبويب اللاعب (Tab 1)
+-- [1] تبويب اللاعب
 ------------------------------------------------------------------------
 
--- شريط تعديل السرعة (WalkSpeed)
-Tab1:NewSlider("تعديل السرعة (WalkSpeed)", "حدد سرعة لاعبك بدقة", 300, 16, function(v)
+-- شريط السرعة
+Section1:NewSlider("تعديل السرعة (WalkSpeed)", "تحكم في سرعة مشي الشخصية", 300, 16, function(v)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v
     end
 end)
 
--- شريط تعديل القفز (JumpPower)
-Tab1:NewSlider("تعديل القفز (JumpPower)", "حدد قوة قفزة لاعبك", 300, 50, function(v)
+-- شريط القفز
+Section1:NewSlider("تعديل القفز (JumpPower)", "تحكم في قوة قفز الشخصية", 300, 50, function(v)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         hum.UseJumpPower = true
@@ -41,39 +46,40 @@ Tab1:NewSlider("تعديل القفز (JumpPower)", "حدد قوة قفزة لا
 end)
 
 ------------------------------------------------------------------------
--- [2] ميزات تبويب الحركة والقدرات (Tab 2)
+-- [2] تبويب الحركة والقدرات (الطيران والنكليب)
 ------------------------------------------------------------------------
 
--- زر تفعيل وتعطيل الطيران
-Tab2:NewToggle("تفعيل الطيران (Fly)", "تفعيل أو تعطيل الطيران في الهواء", function(state)
+-- زر الطيران
+Section2:NewToggle("تفعيل الطيران (Fly)", "تسمح لك بالطيران والسير في الهواء", function(state)
     Flying = state
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").PlatformStand = state
     end
 end)
 
--- شريط التحكم بسرعة الطيران
-Tab2:NewSlider("سرعة الطيران", "حدد سرعة الطيران في الهواء", 300, 20, function(v)
+-- شريط سرعة الطيران
+Section2:NewSlider("سرعة الطيران", "تحكم في سرعة طيرانك في الهواء", 300, 20, function(v)
     FlySpeed = v
 end)
 
--- زر اختراق الجدران (Noclip)
-Tab2:NewToggle("اختراق الجدران (Noclip)", "تسمح لك بالمرور من خلال الجدران", function(state)
+-- زر اختراق الجدران
+Section2:NewToggle("اختراق الجدران (Noclip)", "تسمح لك بالمرور من بين الجدران والأشياء", function(state)
     Noclip = state
 end)
 
--- زر قفز لانهائي (Infinite Jump)
-Tab2:NewToggle("قفز لانهائي (Infinite Jump)", "تسمح لك بالقفز المتكرر في الهواء", function(state)
+-- زر قفز لانهائي
+Section2:NewToggle("قفز لانهائي (Infinite Jump)", "تسمح لك بالقفز المتكرر في الهواء", function(state)
     InfJump = state
 end)
 
 ------------------------------------------------------------------------
--- [3] المحركات الخلفية (التي تشغل القدرات باستمرار)
+-- [3] المحركات الخلفية (التي تشغل القدرات باستمرار وبدون كراش)
 ------------------------------------------------------------------------
 
--- محرك حركة الطيران بالكيبورد (W, A, S, D)
+-- محرك الطيران (W, A, S, D)
 task.spawn(function()
-    while task.wait() do
+    while true do
+        task.wait()
         if Flying and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             local root = LocalPlayer.Character.HumanoidRootPart
             local cam = workspace.CurrentCamera
@@ -110,3 +116,10 @@ UIS.JumpRequest:Connect(function()
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
+
+------------------------------------------------------------------------
+-- [4] تبويب الحقوق
+------------------------------------------------------------------------
+Section3:NewLabel("تم التطوير بواسطة: 7KM")
+Section3:NewLabel("سكربت فخم ومتكامل ومستقر")
+Section3:NewLabel("جميع الحقوق محفوظة © 2026")
