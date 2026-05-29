@@ -1,9 +1,8 @@
--- استدعاء مكتبة واجهات Shiba UI المتطورة، السريعة والمستقرة جداً
+-- استدعاء مكتبة Kavo المستقرة والمتوافقة مع محركك
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
--- تنويه: المكتبة معدلة داخلياً لتعطي أعلى سرعة استجابة وأنيمشن متناسق مع الفريمات
 
--- إنشاء اللوحة بشكل جديد كلياً وثيم أسود وأحمر نيون متوهج (BloodTheme المطور)
-local Window = Library.CreateLib("7KM Hub | Bypass Edition v5.0", "BloodTheme")
+-- إنشاء اللوحة بثيم BloodTheme الفخم بحقوقك 7KM
+local Window = Library.CreateLib("7KM Hub | Bypass Edition v5.1", "BloodTheme")
 
 -- الخدمات الأساسية داخل روبلوكس
 local Players = game:GetService("Players")
@@ -19,65 +18,24 @@ local FlySpeed = 50
 local Flying = false
 local Noclip = false
 local InfJump = false
-local AimbotEnabled = false
-local EspEnabled = false
-local SpeedBypassEnabled = false -- تفعيل تخطي الحماية تلقائياً
 
--- إنشاء التبويبات الجديدة كلياً (New Layout)
-local Tab1 = Window:NewTab("تخطي الحمايات (Bypass)")
-local Tab2 = Window:NewTab("تحركات اللاعب")
-local Tab3 = Window:NewTab("الطيران والجدران")
-local Tab4 = Window:NewTab("القتال والمساعدات")
-local Tab5 = Window:NewTab("الانتقال (Teleport)")
-local Tab6 = Window:NewTab("الحقوق")
+-- إنشاء التبويبات بشكل منظم
+local Tab1 = Window:NewTab("التحكم باللاعب")
+local Tab2 = Window:NewTab("الطيران والجدران")
+local Tab3 = Window:NewTab("الحقوق")
 
-local SectionBypass = Tab1:NewSection("أنظمة تخطي حماية السيرفر والمابات")
-local Section1 = Tab2:NewSection("تعديل خصائص الشخصية")
-local Section2 = Tab3:NewSection("ضبط الطيران والسير في الهواء")
-local Section3 = Tab4:NewSection("أدوات الهجوم والـ ESP")
-local Section4 = Tab5:NewSection("الانتقال السريع للاعبين")
-local Section5 = Tab6:NewSection("المطور")
+local Section1 = Tab1:NewSection("تعديل خصائص الشخصية")
+local Section2 = Tab2:NewSection("ضبط الطيران والسير في الهواء")
+local Section3 = Tab3:NewSection("المطور")
 
 ------------------------------------------------------------------------
--- [1] تبويب تخطي الحمايات (Bypass) - الميزة الخارقة الجديدة
-------------------------------------------------------------------------
-
-SectionBypass:NewToggle("تفعيل تخطي حماية السرعة (Speed Bypass)", "تخطي طرد المابات عند زيادة السرعة", function(state)
-    SpeedBypassEnabled = state
-    if state then
-        -- تعطيل السكربتات المحلية التي تراقب السرعة في الماب
-        pcall(function()
-            for _, v in pairs(game:GetDescendants()) do
-                if v:IsA("LocalScript") and (v.Name:lower():find("cheat") or v.Name:lower():find("anticheat") or v.Name:lower():find("speed")) then
-                    v.Disabled = true
-                end
-            end
-        end)
-    end
-end)
-
-SectionBypass:NewButton("تنظيف الـ Anti-Cheat يدوياً", "يحذف ملفات المراقبة المخفية في شخصيتك", function()
-    pcall(function()
-        if LocalPlayer.Character then
-            for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
-                if v:IsA("LocalScript") and #v.Name > 15 then -- غالباً الحمايات تكون أسمائها مشفرة وطويلة
-                    v:Destroy()
-                end
-            end
-        end
-    end)
-end)
-
-------------------------------------------------------------------------
--- [2] تبويب اللاعب (طريقة مشي مخفية لتخطي الحماية)
+-- [1] تبويب اللاعب
 ------------------------------------------------------------------------
 
 Section1:NewSlider("تعديل السرعة (WalkSpeed)", "تحكم سريع في سرعة المشي", 300, 16, function(v)
     WalkSpeedValue = v
-    if not SpeedBypassEnabled then
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v
-        end
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v
     end
 end)
 
@@ -91,10 +49,10 @@ Section1:NewSlider("تعديل القفز (JumpPower)", "تحكم سريع في 
 end)
 
 ------------------------------------------------------------------------
--- [3] تبويب الحركة والطيران (التفاف كامل وفوري مع الماوس)
+-- [2] تبويب الحركة والطيران (الالتفاف مع الكاميرا بسلاسة)
 ------------------------------------------------------------------------
 
-Section2:NewToggle("تفعيل الطيران (Fly)", "طيران احترافي يلتف مع اتجاه الكاميرا فوراً", function(state)
+Section2:NewToggle("تفعيل الطيران (Fly)", "طيران يلتف مع اتجاه الكاميرا والماوس", function(state)
     Flying = state
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
@@ -120,148 +78,33 @@ Section2:NewToggle("قفز لانهائي (Infinite Jump)", "القفز المت
 end)
 
 ------------------------------------------------------------------------
--- [4] تبويب القتال والمساعدات (Aimbot & ESP)
+-- [3] المحركات الخلفية المستقرة (معالجة الحركة والدوران)
 ------------------------------------------------------------------------
 
-Section3:NewToggle("تفعيل مساعد التصويب (Aimbot)", "توجيه الكاميرا تلقائياً نحو أقرب هدف", function(state)
-    AimbotEnabled = state
-end)
-
-local function getClosestPlayer()
-    local closestPlayer = nil
-    local shortestDistance = math.huge
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChildOfClass("Humanoid") and v.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-            local distance = (LocalPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                closestPlayer = v
-                shortestDistance = distance
-            end
-        end
-    end
-    return closestPlayer
-end
-
-local function createEsp(player)
-    if player == LocalPlayer then return end
-    local box = Drawing.new("Square")
-    box.Visible = false
-    box.Color = Color3.fromRGB(255, 0, 0)
-    box.Thickness = 2
-    box.Filled = false
-
-    local function update()
-        local connection
-        connection = RunService.RenderStepped:Connect(function()
-            if EspEnabled and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-                local rPart = player.Character.HumanoidRootPart
-                local pos, onScreen = Camera:WorldToViewportPoint(rPart.Position)
-                if onScreen then
-                    box.Size = Vector2.new(2000 / pos.Z, 3000 / pos.Z)
-                    box.Position = Vector2.new(pos.X - box.Size.X / 2, pos.Y - box.Size.Y / 2)
-                    box.Visible = true
-                else
-                    box.Visible = false
-                end
-            else
-                box.Visible = false
-                if not EspEnabled then
-                    box:Remove()
-                    connection:Disconnect()
-                end
-            end
-        end)
-    end
-    coroutine.wrap(update)()
-end
-
-Section3:NewToggle("تفعيل رؤية الجدران (Player ESP)", "رؤية مربعات حمراء حول جميع اللاعبين", function(state)
-    EspEnabled = state
-    if state then
-        for _, p in pairs(Players:GetPlayers()) do
-            createEsp(p)
-        end
-    end
-end)
-
-------------------------------------------------------------------------
--- [5] تبويب الانتقال (Teleport)
-------------------------------------------------------------------------
-
-local currentSelectedPlayer = nil
-local PlayerDropdown = Section4:NewDropdown("اختر اللاعب للذهاب إليه", "قائمة أسماء اللاعبين بالسيرفر", {}, function(selected)
-    currentSelectedPlayer = selected
-end)
-
-Section4:NewButton("تحديث قائمة اللاعبين", "تحديث أسماء اللاعبين فوراً في القائمة", function()
-    local playerNames = {}
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            table.insert(playerNames, p.Name)
-        end
-    end
-    PlayerDropdown:Refresh(playerNames)
-end)
-
-Section4:NewButton("انتقال فوراً (Teleport)", "ينقلك فوراً للاعب المحدد أعلاه", function()
-    if currentSelectedPlayer then
-        local target = Players:FindFirstChild(currentSelectedPlayer)
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
-        end
-    end
-end)
-
-------------------------------------------------------------------------
--- [6] المحركات الخلفية الخارقة (السرعة المتجاوبة واختراق الحمايات)
-------------------------------------------------------------------------
-
--- محرك الحركة المتطور: يدمج بين (تخطي حماية السرعة وبترتيب دوران الكاميرا مع الطيران)
+-- محرك الطيران المطور والمصحح إملائياً
 RunService.RenderStepped:Connect(function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+    if Flying and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local root = LocalPlayer.Character.HumanoidRootPart
-        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        local dir = Vector3.new(0, 0, 0)
         
-        -- أولاً: تشغيل اختراق حماية السرعة (Bypass) عن طريق تعديل الـ CFrame مباشرة بدون لمس قيم الـ WalkSpeed التقليدية
-        if SpeedBypassEnabled and WalkSpeedValue > 16 and not Flying then
-            local moveDirection = hum.MoveDirection
-            if moveDirection.Magnitude > 0 then
-                root.CFrame = root.CFrame + (moveDirection * (WalkSpeedValue / 100))
-            end
-        end
+        -- جلب اتجاهات الحركة بالاعتماد على مكان الكاميرا الحالي
+        if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + Camera.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - Camera.CFrame.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - Camera.CFrame.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + Camera.CFrame.RightVector end
         
-        -- ثانياً: محرك الطيران الإحترافي (الالتفاف الفوري والكامل مع الكاميرا والماوس)
-        if Flying then
-            local dir = Vector3.new(0, 0, 0)
-            
-            if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + Camera.CFrame.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - Camera.CFrame.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - Camera.CFrame.RightVector end
-            if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam = Camera.CFrame.RightVector end
-            
-            -- إجبار زاوية الشخصية بالكامل على تتبع اتجاه نظر الكاميرا والماوس بدقة 100%
-            root.CFrame = CFrame.new(root.Position, root.Position + Camera.CFrame.LookVector)
-            
-            if dir.Magnitude > 0 then
-                root.Velocity = dir.Unit * FlySpeed
-            else
-                root.Velocity = Vector3.new(0, 0, 0)
-            end
+        -- إجبار الشخصية على الالتفاف الفوري والكامل مع الماوس ونظر الكاميرا
+        root.CFrame = CFrame.new(root.Position, root.Position + Camera.CFrame.LookVector)
+        
+        if dir.Magnitude > 0 then
+            root.Velocity = dir.Unit * FlySpeed
+        else
+            root.Velocity = Vector3.new(0, 0, 0)
         end
     end
 end)
 
--- محرك الـ Aimbot الخلفي السريع
-RunService.RenderStepped:Connect(function()
-    if AimbotEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local target = getClosestPlayer()
-        if target and target.Character and target.Character:FindFirstChild("Head") then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
-        end
-    end
-end)
-
--- محرك اختراق الجدران المتجاوب (Noclip)
+-- محرك اختراق الجدران (Noclip)
 RunService.Stepped:Connect(function()
     if Noclip and LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
@@ -279,16 +122,9 @@ UIS.JumpRequest:Connect(function()
     end
 end)
 
--- ميزة منع الطرد (Anti-AFK)
-local VirtualUser = game:GetService("VirtualUser")
-LocalPlayer.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new(0,0))
-end)
-
 ------------------------------------------------------------------------
--- [7] تبويب الحقوق
+-- [4] تبويب الحقوق
 ------------------------------------------------------------------------
-Section5:NewLabel("تم التطوير والتعديل بواسطة: 7KM")
-Section5:NewLabel("نسخة اختراق الحمايات الفخمة v5.0")
-Section5:NewLabel("جميع الحقوق محفوظة © 2026")
+Section3:NewLabel("تم التطوير والتعديل بواسطة: 7KM")
+Section3:NewLabel("نسخة مستقرة ومصححة بالكامل v5.1")
+Section3:NewLabel("جميع الحقوق محفوظة © 2026")
