@@ -1,285 +1,362 @@
--- استدعاء مكتبة Kavo المستقرة والمعروفة عندك
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+-- ================================================
+-- Island GUI Script - by Claude
+-- ضعه في: StarterGui > LocalScript
+-- ================================================
 
--- إنشاء اللوحة بالشكل القديم الفخم (BloodTheme) وبحقوقك 7KM
-local Window = Library.CreateLib("7KM Hub | Premium Edition v7.5", "BloodTheme")
-
--- الخدمات الأساسية داخل روبلوكس
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
-local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
--- متغيرات التحكم بالميزات
-local WalkSpeedValue = 16
-local JumpPowerValue = 50
-local SpeedActive = false
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+local camera = workspace.CurrentCamera
 
--- متغيرات الطيران
-local FlySpeed = 50
-local Flying = false
-local Noclip = false
-local InfJump = false
-local bV, bG
+-- ================================================
+-- متغيرات
+-- ================================================
+local flying = false
+local flyConnection
+local flySpeed = 50
+local currentSpeed = 16
 
--- متغيرات الـ Aimbot والـ FOV
-local AimActive = false
-local IsRightClicking = false
-local SelectedPlayerName = "اختر لاعب من السيرفر..."
+-- ================================================
+-- إنشاء الـ GUI
+-- ================================================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "IslandGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player.PlayerGui
 
--- إعداد دائرة الـ FOV المرئية
-local FOV_Circle = Drawing.new("Circle")
-FOV_Circle.Color = Color3.fromRGB(180, 0, 0)
-FOV_Circle.Thickness = 1.5
-FOV_Circle.NumSides = 64
-FOV_Circle.Radius = 120
-FOV_Circle.Filled = false
-FOV_Circle.Visible = false
+-- الإطار الرئيسي
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 220, 0, 420)
+mainFrame.Position = UDim2.new(0, 20, 0.5, -210)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
 
--- إنشاء التبويبات القديمة (Tabs) على اليسار بتنظيمك الجديد
-local Tab1 = Window:NewTab("اللاعب والحركة")
-local Tab2 = Window:NewTab("الطيران والجدران")
-local Tab3 = Window:NewTab("الـ Aimbot")
-local Tab4 = Window:NewTab("قائمة اللاعبين")
-local Tab5 = Window:NewTab("الحقوق")
+-- زوايا مستديرة
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = mainFrame
 
-local Section1 = Tab1:NewSection("تعديل السرعة والفيزياء")
-local Section2 = Tab2:NewSection("ضبط الطيران والسير في الهواء")
-local Section3 = Tab3:NewSection("ضبط التوجيه التلقائي (كلك يمين)")
-local Section4 = Tab4:NewSection("اللاعبين المتواجدين بالسيرفر")
-local Section5 = Tab5:NewSection("المطور")
+-- خط علوي ملون
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1, 0, 0, 4)
+topBar.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+topBar.BorderSizePixel = 0
+topBar.Parent = mainFrame
+local topCorner = Instance.new("UICorner")
+topCorner.CornerRadius = UDim.new(0, 12)
+topCorner.Parent = topBar
 
-------------------------------------------------------------------------
--- [1] تبويب اللاعب والحركة (السرعة الثابتة بدون تزحلق)
-------------------------------------------------------------------------
+-- العنوان
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 45)
+titleLabel.Position = UDim2.new(0, 0, 0, 8)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "🏝️ Island Menu"
+titleLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
+titleLabel.TextSize = 18
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Parent = mainFrame
 
-Section1:NewToggle("تفعيل السرعة الثابتة (Anti-Slip)", "تفعيل محرك السرعة الفيزيائي بدون انزلاق", function(state)
-    SpeedActive = state
+-- ================================================
+-- دالة إنشاء زر
+-- ================================================
+local function createButton(text, yPos, color)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.85, 0, 0, 42)
+    btn.Position = UDim2.new(0.075, 0, 0, yPos)
+    btn.BackgroundColor3 = color or Color3.fromRGB(30, 30, 50)
+    btn.BorderSizePixel = 0
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 14
+    btn.Font = Enum.Font.GothamSemibold
+    btn.Parent = mainFrame
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+
+    -- تأثير hover
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+        }):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundColor3 = color or Color3.fromRGB(30, 30, 50)
+        }):Play()
+    end)
+
+    return btn
+end
+
+-- ================================================
+-- Slider السرعة
+-- ================================================
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(0.85, 0, 0, 20)
+speedLabel.Position = UDim2.new(0.075, 0, 0, 58)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "⚡ السرعة: 16"
+speedLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
+speedLabel.TextSize = 13
+speedLabel.Font = Enum.Font.Gotham
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+speedLabel.Parent = mainFrame
+
+local sliderBg = Instance.new("Frame")
+sliderBg.Size = UDim2.new(0.85, 0, 0, 10)
+sliderBg.Position = UDim2.new(0.075, 0, 0, 82)
+sliderBg.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+sliderBg.BorderSizePixel = 0
+sliderBg.Parent = mainFrame
+local sliderCorner = Instance.new("UICorner")
+sliderCorner.CornerRadius = UDim.new(0, 5)
+sliderCorner.Parent = sliderBg
+
+local sliderFill = Instance.new("Frame")
+sliderFill.Size = UDim2.new(0.16, 0, 1, 0)
+sliderFill.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+sliderFill.BorderSizePixel = 0
+sliderFill.Parent = sliderBg
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(0, 5)
+fillCorner.Parent = sliderFill
+
+-- تحريك الـ slider
+local dragging = false
+sliderBg.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+    end
 end)
-
-Section1:NewSlider("تعديل قوة السرعة", "التحكم في السرعة القصوى للشخصية", 300, 16, function(v)
-    WalkSpeedValue = v
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
 end)
-
-Section1:NewSlider("تعديل القفز (JumpPower)", "تحكم سريع في قوة القفز", 300, 50, function(v)
-    JumpPowerValue = v
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        hum.UseJumpPower = true
-        hum.JumpPower = v
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local sliderPos = sliderBg.AbsolutePosition.X
+        local sliderWidth = sliderBg.AbsoluteSize.X
+        local mouseX = input.Position.X
+        local ratio = math.clamp((mouseX - sliderPos) / sliderWidth, 0, 1)
+        sliderFill.Size = UDim2.new(ratio, 0, 1, 0)
+        currentSpeed = math.floor(ratio * 200) + 16
+        speedLabel.Text = "⚡ السرعة: " .. currentSpeed
+        humanoid.WalkSpeed = currentSpeed
     end
 end)
 
-------------------------------------------------------------------------
--- [2] تبويب الطيران والجدران (منفصل ومستقل)
-------------------------------------------------------------------------
+-- ================================================
+-- زر الطيران
+-- ================================================
+local flyBtn = createButton("🕊️ الطيران: OFF", 105, Color3.fromRGB(30, 30, 50))
 
-Section2:NewToggle("تفعيل الطيران (Fly)", "طيران يلتف مع اتجاه الكاميرا ونظرك بالكامل", function(state)
-    Flying = state
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
-        local root = char.HumanoidRootPart
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        
-        if state then
-            hum.PlatformStand = true
-            
-            -- إنشاء أدوات تثبيت الجاذبية والحركة
-            bV = Instance.new("BodyVelocity")
-            bV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bV.Velocity = Vector3.new(0, 0, 0)
-            bV.Parent = root
-            
-            bG = Instance.new("BodyGyro")
-            bG.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            bG.CFrame = root.CFrame
-            bG.P = 10000 
-            bG.Parent = root
+local function stopFlying()
+    flying = false
+    flyBtn.Text = "🕊️ الطيران: OFF"
+    if flyConnection then
+        flyConnection:Disconnect()
+        flyConnection = nil
+    end
+    for _, obj in pairs(rootPart:GetChildren()) do
+        if obj:IsA("BodyVelocity") or obj:IsA("BodyGyro") then
+            obj:Destroy()
+        end
+    end
+    humanoid.PlatformStand = false
+end
+
+local function startFlying()
+    flying = true
+    flyBtn.Text = "🕊️ الطيران: ON"
+    humanoid.PlatformStand = true
+
+    local bodyVel = Instance.new("BodyVelocity")
+    bodyVel.Velocity = Vector3.new(0, 0, 0)
+    bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bodyVel.Parent = rootPart
+
+    local bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    bodyGyro.P = 1e4
+    bodyGyro.Parent = rootPart
+
+    flyConnection = RunService.RenderStepped:Connect(function()
+        if not flying then return end
+
+        local camDir = camera.CFrame.LookVector
+        local moveDir = Vector3.new(0, 0, 0)
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            moveDir = moveDir + camDir
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            moveDir = moveDir - camDir
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            moveDir = moveDir - camera.CFrame.RightVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            moveDir = moveDir + camera.CFrame.RightVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            moveDir = moveDir + Vector3.new(0, 1, 0)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            moveDir = moveDir - Vector3.new(0, 1, 0)
+        end
+
+        if moveDir.Magnitude > 0 then
+            bodyVel.Velocity = moveDir.Unit * flySpeed
         else
-            hum.PlatformStand = false
-            if bV then bV:Destroy() end
-            if bG then bG:Destroy() end
-            root.Velocity = Vector3.new(0,0,0)
+            bodyVel.Velocity = Vector3.new(0, 0, 0)
         end
-    end
-end)
 
-Section2:NewSlider("سرعة الطيران", "تحكم في سرعة تحليقك في الهواء", 300, 20, function(v)
-    FlySpeed = v
-end)
-
-Section2:NewToggle("اختراق الجدران (Noclip)", "المرور من الجدران والأبواب بسلاسة", function(state)
-    Noclip = state
-end)
-
-Section2:NewToggle("قفز لانهائي (Infinite Jump)", "القفز المتكرر في الهواء بدون توقف", function(state)
-    InfJump = state
-end)
-
-------------------------------------------------------------------------
--- [3] تبويب الـ Aimbot (مستقل)
-------------------------------------------------------------------------
-
-Section3:NewToggle("تفعيل الـ Aimbot", "يشبك تلقائياً عند التعليق على كلك يمين", function(state)
-    AimActive = state
-    FOV_Circle.Visible = state
-end)
-
-Section3:NewSlider("تعديل مجال الرؤية (FOV)", "التحكم في قطر دائرة تحديد الهدف", 400, 30, function(v)
-    FOV_Circle.Radius = v
-end)
-
-------------------------------------------------------------------------
--- [4] تبويب قائمة اللاعبين (منفصل تماماً)
-------------------------------------------------------------------------
-
--- دالة لجلب أسماء اللاعبين وتحديث القائمة
-local function getPlayersNames()
-    local names = {}
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            table.insert(names, p.Name)
-        end
-    end
-    return names
+        bodyGyro.CFrame = camera.CFrame
+    end)
 end
 
-local PlayerDropdown = Section4:NewDropdown("اختر لاعب للـ Aim", "تحديد لاعب معين من السيرفر للتركيز عليه", getPlayersNames(), function(currentOption)
-    SelectedPlayerName = currentOption
-end)
-
-Section4:NewButton("تحديث قائمة اللاعبين 🔄", "إعادة جلب الأسماء المتواجدة في السيرفر", function()
-    PlayerDropdown:Refresh(getPlayersNames())
-end)
-
-------------------------------------------------------------------------
--- المحركات الخلفية (الـ Aimbot، الطيران، والسرعة الفيزيائية)
-------------------------------------------------------------------------
-
--- رصد ضغط وترك كلك يمين الماوس
-UIS.InputBegan:Connect(function(input, processed)
-    if not processed and input.UserInputType == Enum.UserInputType.MouseButton2 then
-        IsRightClicking = true
+flyBtn.MouseButton1Click:Connect(function()
+    if flying then
+        stopFlying()
+    else
+        startFlying()
     end
 end)
 
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        IsRightClicking = false
+-- ================================================
+-- Slider سرعة الطيران
+-- ================================================
+local flySpeedLabel = Instance.new("TextLabel")
+flySpeedLabel.Size = UDim2.new(0.85, 0, 0, 20)
+flySpeedLabel.Position = UDim2.new(0.075, 0, 0, 155)
+flySpeedLabel.BackgroundTransparency = 1
+flySpeedLabel.Text = "✈️ سرعة الطيران: 50"
+flySpeedLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
+flySpeedLabel.TextSize = 13
+flySpeedLabel.Font = Enum.Font.Gotham
+flySpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+flySpeedLabel.Parent = mainFrame
+
+local flySliderBg = Instance.new("Frame")
+flySliderBg.Size = UDim2.new(0.85, 0, 0, 10)
+flySliderBg.Position = UDim2.new(0.075, 0, 0, 178)
+flySliderBg.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+flySliderBg.BorderSizePixel = 0
+flySliderBg.Parent = mainFrame
+local flySliderCorner = Instance.new("UICorner")
+flySliderCorner.CornerRadius = UDim.new(0, 5)
+flySliderCorner.Parent = flySliderBg
+
+local flySliderFill = Instance.new("Frame")
+flySliderFill.Size = UDim2.new(0.25, 0, 1, 0)
+flySliderFill.BackgroundColor3 = Color3.fromRGB(100, 255, 180)
+flySliderFill.BorderSizePixel = 0
+flySliderFill.Parent = flySliderBg
+local flyFillCorner = Instance.new("UICorner")
+flyFillCorner.CornerRadius = UDim.new(0, 5)
+flyFillCorner.Parent = flySliderFill
+
+local flyDragging = false
+flySliderBg.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        flyDragging = true
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        flyDragging = false
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if flyDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local sliderPos = flySliderBg.AbsolutePosition.X
+        local sliderWidth = flySliderBg.AbsoluteSize.X
+        local mouseX = input.Position.X
+        local ratio = math.clamp((mouseX - sliderPos) / sliderWidth, 0, 1)
+        flySliderFill.Size = UDim2.new(ratio, 0, 1, 0)
+        flySpeed = math.floor(ratio * 200) + 10
+        flySpeedLabel.Text = "✈️ سرعة الطيران: " .. flySpeed
     end
 end)
 
--- دالة جلب أقرب هدف
-local function getClosestPlayer()
-    local closestTarget = nil
-    local shortestDistance = math.huge
-    
-    -- إذا تم تحديد لاعب معين من القائمة المنسدلة
-    if SelectedPlayerName ~= "اختر لاعب من السيرفر..." then
-        local targetPlayer = Players:FindFirstChild(SelectedPlayerName)
-        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local root = targetPlayer.Character.HumanoidRootPart
-            local screenPos, onScreen = Camera:WorldToViewportPoint(root.Position)
-            if onScreen then
-                local mousePos = UIS:GetMouseLocation()
-                local distance = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-                if distance <= FOV_Circle.Radius then
-                    return targetPlayer.Character
-                end
-            end
+-- ================================================
+-- أزرار الأنميشن
+-- ================================================
+local animLabel = Instance.new("TextLabel")
+animLabel.Size = UDim2.new(0.85, 0, 0, 20)
+animLabel.Position = UDim2.new(0.075, 0, 0, 200)
+animLabel.BackgroundTransparency = 1
+animLabel.Text = "🎭 الأنميشن"
+animLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
+animLabel.TextSize = 13
+animLabel.Font = Enum.Font.GothamBold
+animLabel.TextXAlignment = Enum.TextXAlignment.Left
+animLabel.Parent = mainFrame
+
+-- الأنميشنات (IDs رسمية من Roblox)
+local animations = {
+    {name = "💃 رقص", id = "rbxassetid://182435998"},
+    {name = "🤸 شقلبة", id = "rbxassetid://282574440"},
+    {name = "👋 تحية", id = "rbxassetid://507770239"},
+}
+
+local currentAnim = nil
+for i, anim in ipairs(animations) do
+    local animBtn = createButton(anim.name, 195 + (i * 48), Color3.fromRGB(40, 20, 60))
+    animBtn.MouseButton1Click:Connect(function()
+        if currentAnim then
+            currentAnim:Stop()
         end
-    end
-    
-    -- البحث التلقائي عن الأقرب إذا لم يتم تحديد اسم
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChildOfClass("Humanoid") then
-            if p.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-                local root = p.Character.HumanoidRootPart
-                local screenPos, onScreen = Camera:WorldToViewportPoint(root.Position)
-                if onScreen then
-                    local mousePos = UIS:GetMouseLocation()
-                    local distance = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-                    if distance <= FOV_Circle.Radius and distance < shortestDistance then
-                        shortestDistance = distance
-                        closestTarget = p.Character
-                    end
-                end
-            end
-        end
-    end
-    return closestTarget
+        local animation = Instance.new("Animation")
+        animation.AnimationId = anim.id
+        currentAnim = humanoid:LoadAnimation(animation)
+        currentAnim:Play()
+    end)
 end
 
--- المحرك الموحد المربوط مع الفريمات
-RunService.RenderStepped:Connect(function()
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
-        local root = char.HumanoidRootPart
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        
-        -- محرك السرعة الفيزيائي (يمنع التزحلق تماماً)
-        if SpeedActive then
-            local moveDirection = hum.MoveDirection
-            if moveDirection.Magnitude > 0 then
-                root.Velocity = Vector3.new(moveDirection.X * WalkSpeedValue, root.Velocity.Y, moveDirection.Z * WalkSpeedValue)
-            end
-        end
-        
-        -- محرك الطيران وتتبع اتجاه الكاميرا
-        if Flying then
-            local dir = Vector3.new(0, 0, 0)
-            if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + Camera.CFrame.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - Camera.CFrame.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - Camera.CFrame.RightVector end
-            if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + Camera.CFrame.RightVector end
-            
-            if bG then bG.CFrame = Camera.CFrame end
-            if bV then
-                if dir.Magnitude > 0 then
-                    bV.Velocity = dir.Unit * FlySpeed
-                else
-                    bV.Velocity = Vector3.new(0, 0, 0)
-                end
-            end
-        end
-        
-        -- تشغيل الـ Aimbot عند ضغط كلك يمين
-        if AimActive and IsRightClicking then
-            local target = getClosestPlayer()
-            if target and target:FindFirstChild("Head") then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Head.Position)
-            end
-        end
-    end
-    
-    -- تحديث موقع دائرة الـ FOV مع الماوس
-    if FOV_Circle.Visible then
-        FOV_Circle.Position = UIS:GetMouseLocation()
+-- زر إيقاف الأنميشن
+local stopAnimBtn = createButton("⏹️ إيقاف الأنميشن", 195 + (4 * 48), Color3.fromRGB(80, 20, 20))
+stopAnimBtn.MouseButton1Click:Connect(function()
+    if currentAnim then
+        currentAnim:Stop()
+        currentAnim = nil
     end
 end)
 
--- محرك اختراق الجدران (Noclip)
-RunService.Stepped:Connect(function()
-    if Noclip and LocalPlayer.Character then
-        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-    end
+-- ================================================
+-- تعليمات الطيران
+-- ================================================
+local hintLabel = Instance.new("TextLabel")
+hintLabel.Size = UDim2.new(0.85, 0, 0, 30)
+hintLabel.Position = UDim2.new(0.075, 0, 1, -38)
+hintLabel.BackgroundTransparency = 1
+hintLabel.Text = "W/A/S/D + Space/Ctrl للطيران"
+hintLabel.TextColor3 = Color3.fromRGB(100, 100, 130)
+hintLabel.TextSize = 11
+hintLabel.Font = Enum.Font.Gotham
+hintLabel.TextWrapped = true
+hintLabel.Parent = mainFrame
+
+-- ================================================
+-- إعادة تعيين عند respawn
+-- ================================================
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    humanoid = newChar:WaitForChild("Humanoid")
+    rootPart = newChar:WaitForChild("HumanoidRootPart")
+    flying = false
+    flyBtn.Text = "🕊️ الطيران: OFF"
 end)
 
--- محرك القفز اللانهائي
-UIS.JumpRequest:Connect(function()
-    if InfJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
-
-------------------------------------------------------------------------
--- [5] تبويب الحقوق
-------------------------------------------------------------------------
-Section5:NewLabel("تم التطوير والتعديل بواسطة: 7KM")
-Section5:NewLabel("النسخة المقسمة والمستقرة v7.5")
-Section5:NewLabel("جميع الحقوق محفوظة © 2026")
+print("✅ Island GUI loaded!")
