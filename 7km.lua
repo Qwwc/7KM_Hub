@@ -1,8 +1,8 @@
 -- استدعاء مكتبة Kavo المستقرة والمتوافقة مع محركك
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 
--- إنشاء اللوحة بثيم BloodTheme الفخم بحقوقك 7KM
-local Window = Library.CreateLib("7KM Hub | Bypass Edition v5.1", "BloodTheme")
+-- إنشاء اللوحة بثيم فخم (BloodTheme) وبحقوقك 7KM
+local Window = Library.CreateLib("7KM Hub | Premium Edition v5.2", "BloodTheme")
 
 -- الخدمات الأساسية داخل روبلوكس
 local Players = game:GetService("Players")
@@ -19,9 +19,9 @@ local Flying = false
 local Noclip = false
 local InfJump = false
 
--- إنشاء التبويبات بشكل منظم
-local Tab1 = Window:NewTab("التحكم باللاعب")
-local Tab2 = Window:NewTab("الطيران والجدران")
+-- إنشاء التبويبات الفخمة (Tabs)
+local Tab1 = Window:NewTab("اللاعب")
+local Tab2 = Window:NewTab("الحركة والطيران")
 local Tab3 = Window:NewTab("الحقوق")
 
 local Section1 = Tab1:NewSection("تعديل خصائص الشخصية")
@@ -81,7 +81,7 @@ end)
 -- [3] المحركات الخلفية المستقرة (معالجة الحركة والدوران)
 ------------------------------------------------------------------------
 
--- محرك الطيران المطور والمصحح إملائياً
+-- محرك الطيران المطور والمصحح بالكامل
 RunService.RenderStepped:Connect(function()
     if Flying and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local root = LocalPlayer.Character.HumanoidRootPart
@@ -126,5 +126,5 @@ end)
 -- [4] تبويب الحقوق
 ------------------------------------------------------------------------
 Section3:NewLabel("تم التطوير والتعديل بواسطة: 7KM")
-Section3:NewLabel("نسخة مستقرة ومصححة بالكامل v5.1")
+Section3:NewLabel("نسخة مستقرة ومصححة بالكامل v5.2")
 Section3:NewLabel("جميع الحقوق محفوظة © 2026")
