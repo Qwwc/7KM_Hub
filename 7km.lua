@@ -1,10 +1,10 @@
 -- استدعاء مكتبة Kavo المستقرة والمتوافقة مع محركك
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 
--- إنشاء اللوحة بثيم فخم (BloodTheme) وبحقوقك 7KM
+-- إنشاء اللوحة بشكل محسّن وثيم فخم (BloodTheme) بحقوقك
 local Window = Library.CreateLib("7KM Hub | Premium Edition", "BloodTheme")
 
--- الخدمات الأساسية داخل روبلوكس
+-- الخدمات الأساسية ل روبلوكس
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
